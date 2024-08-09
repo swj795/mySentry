@@ -1,0 +1,53 @@
+{
+  "name": "demo",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "concurrently  \"npm run dev\" \"npm run service\"",
+    "service": "nodemon ./server.js",
+    "dev": "vite",
+    "build": "run-p type-check \"build-only {@}\" --",
+    "preview": "vite preview",
+    "build-only": "vite build",
+    "type-check": "vue-tsc --build --force",
+    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
+    "format": "prettier --write src/"
+  },
+  "dependencies": {
+    "@highlightjs/vue-plugin": "^2.1.0",
+    "@mysentry/common": "workspace:^",
+    "@mysentry/core": "workspace:^",
+    "@mysentry/types": "workspace:^",
+    "@mysentry/utils": "workspace:^",
+    "axios": "^1.7.2",
+    "body-parser": "^1.20.2",
+    "co-body": "^6.2.0",
+    "concurrently": "^8.2.2",
+    "element-plus": "^2.7.8",
+    "express": "^4.19.2",
+    "highlight.js": "^11.10.0",
+    "nodemon": "^3.1.4",
+    "pinia": "^2.1.7",
+    "serve-static": "^1.15.0",
+    "source-map": "^0.7.4",
+    "vue": "^3.4.29",
+    "vue-router": "^4.3.3"
+  },
+  "devDependencies": {
+    "@rushstack/eslint-patch": "^1.8.0",
+    "@tsconfig/node20": "^20.1.4",
+    "@types/node": "^20.14.5",
+    "@vitejs/plugin-vue": "^5.0.5",
+    "@vue/eslint-config-prettier": "^9.0.0",
+    "@vue/eslint-config-typescript": "^13.0.0",
+    "@vue/tsconfig": "^0.5.1",
+    "eslint": "^8.57.0",
+    "eslint-plugin-vue": "^9.23.0",
+    "npm-run-all2": "^6.2.0",
+    "prettier": "^3.2.5",
+    "typescript": "~5.4.0",
+    "vite": "^5.3.1",
+    "vue-tsc": "^2.0.21"
+  }
+}
