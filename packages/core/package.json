@@ -1,0 +1,16 @@
+{
+	"name": "@mysentry/core",
+	"version": "1.0.0",
+	"description": "",
+	"main": "./index.js",
+	"type": "module",
+	"files": [
+		"dist"
+	],
+	"license": "ISC",
+	"dependencies": {
+		"@mysentry/common": "workspace:^",
+		"@mysentry/types": "workspace:^",
+		"@mysentry/utils": "workspace:^"
+	}
+}
