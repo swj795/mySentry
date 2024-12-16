@@ -1,4 +1,4 @@
-import { IMySentryOptions, ERRORTYPES, IAnyObject, IAnyFun } from '@mysentry/types';
+import { IMySentryOptions, EVENT_TYPES, IAnyObject, IAnyFun } from '@mysentry/types';
 
 const globalMySentryOptions: IMySentryOptions = {} as IMySentryOptions;
 
@@ -51,20 +51,16 @@ export const setOptionFlag = ({
 	silentXhr = true,
 	silentFetch = true,
 	silentClick = true,
-	silentHistory = true,
 	silentError = true,
-	silentHashchange = true,
 	silentUnhandledrejection = true,
 	// silentWhiteScreen = false,
 }) => {
-	setFlag(ERRORTYPES.XHR, !silentXhr);
-	setFlag(ERRORTYPES.FETCH, !silentFetch);
-	setFlag(ERRORTYPES.CLICK, !silentClick);
-	setFlag(ERRORTYPES.HISTORY, !silentHistory);
-	setFlag(ERRORTYPES.ERROR, !silentError);
-	setFlag(ERRORTYPES.HASHCHANGE, !silentHashchange);
-	setFlag(ERRORTYPES.UNHANDLEDREJECTION, !silentUnhandledrejection);
-	// setFlag(ERRORTYPES.WHITE_SCREEN, !silentWhiteScreen);
+	setFlag(EVENT_TYPES.XHR, !silentXhr);
+	setFlag(EVENT_TYPES.FETCH, !silentFetch);
+	setFlag(EVENT_TYPES.CLICK, !silentClick);
+	setFlag(EVENT_TYPES.ERROR, !silentError);
+	setFlag(EVENT_TYPES.UNHANDLEDREJECTION, !silentUnhandledrejection);
+	// setFlag(EVENT_TYPES.WHITE_SCREEN, !silentWhiteScreen);
 };
 
 // 使用AOP重写对象上的属性
@@ -83,7 +79,7 @@ export function replaceAop(
 ) {
 	if (source === undefined) return;
 	if (name in source || isForced) {
-		const original = source[name];
+		const original = source[name];		
 		const wrapped = replacement(original);
 		if (typeof wrapped === 'function') {
 			source[name] = wrapped;
@@ -104,7 +100,9 @@ export function on(
   handler: IAnyFun,
   opitons = false
 ): void {
-  target.addEventListener(eventName, handler, opitons)
+	target.addEventListener(eventName, handler, opitons);
+	console.log(`add event listener ${eventName}`);
+	
 }
 
 // 解析get请求中的参数
@@ -118,4 +116,16 @@ export function parseParamsInGet(url: string) {
 		params[key] = value;
 	});
 	return params;
+}
+
+// 截取字符串，超出部分用...代替
+export function cutString(str: string, len: number) {
+	if (str.length <= len) return str;
+	return str.slice(0, len) + '...';
+}
+
+// 转化资源错误的信息
+export function parseResourceError(resourceErr: any) {
+    console.log(resourceErr);
+	return cutString(resourceErr.src || resourceErr.herf, 100) + '资源加载失败';
 }

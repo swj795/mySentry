@@ -16,6 +16,7 @@ export interface IVueInitOptions {
 	silentError?: boolean;
 	silentHashchange?: boolean;
 	silentUnhandledrejection?: boolean;
+	
 }
 
 export interface IViewModel {
