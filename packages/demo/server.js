@@ -42,12 +42,13 @@ app.get('/getErrorList', (req, res) => {
 app.post('/addError', async (req, res) => {
   try {
     // console.log(req, '<=====req.body');
-    console.log(req.body, 'body')
+    // req.body 有值是通过fetch接口 
     let length = Object.keys(req.body).length
     console.log(length, '<=====length')
     if (length) {
       console.log(length, '<=====length')
     } else {
+      // 使用 web beacon上报错误信息
       let data = await coBody.json(req)
       errorList.push(data)
     }

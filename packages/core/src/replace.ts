@@ -1,4 +1,4 @@
-import { ERRORTYPES, IVoidFun, IReplaceHandler } from '@mysentry/types';
+import { EVENT_TYPES, IVoidFun, IReplaceHandler } from '@mysentry/types';
 // import { replaceAop } from '@mysentry/utils';
 import { replaceAop, on, getTimestamp, parseParamsInGet } from '../../utils/src/index';
 // import { WHITE_URL_LIST } from '@mysentry/common';
@@ -6,24 +6,19 @@ import { WHITE_URL_LIST } from '../../common/src/index';
 import { publishEvent, subscribeEvent } from './subscribe';
 
 // 重写各种监听错误事件
-export function replace(type: ERRORTYPES) {
+export function replace(type: EVENT_TYPES) {
+	console.log(type, '<===type');
 	switch (type) {
-		// case ERRORTYPES.CLICK:
-		//     return replaceCLick()
-		case ERRORTYPES.FETCH:
+		case EVENT_TYPES.FETCH:
 			return replaceFetch();
-		// case ERRORTYPES.HASHCHANGE:
-		//     return replaceHashchange()
-		case ERRORTYPES.ERROR:
+		case EVENT_TYPES.ERROR:
 			return replaceError();
-		case ERRORTYPES.UNHANDLEDREJECTION:
+		case EVENT_TYPES.UNHANDLEDREJECTION:
 			return replaceUnhadledRejection();
-		case ERRORTYPES.XHR:
+		case EVENT_TYPES.XHR:
 			return replaceXhr();
-		// case ERRORTYPES.HISTORY:
-		//     return replaceHistory()
-		// case ERRORTYPES.RESOURCE:
-		//     return replaceResource()
+		case EVENT_TYPES.HISTRORYCHANGE:
+			return replaceHistory();
 		default:
 			return () => {};
 	}
@@ -45,22 +40,32 @@ export function replaceFetch() {
 				method,
 				body,
 				headers,
-				// status: 200,
 			};
-			return originalFetch.apply(window, [url, options]).then((res: Response) => {
-				const tempRes = res.clone();
-				// 克隆一个响应对象，防止后续操作对响应对象产生影响
-				fetchData = Object.assign({}, fetchData, {
-					status: tempRes.status,
+			return originalFetch
+				.apply(window, [url, options])
+				.then((res: Response) => {
+					const tempRes = res.clone();
+					console.log(tempRes, ',====tempRes');
+					// 克隆一个响应对象，防止后续操作对响应对象产生影响
+					fetchData = Object.assign({}, fetchData, {
+						status: tempRes.status,
+						url: tempRes.url,
+					});
+					console.log(fetchData, ',====fetchData');
+
+					// text方法返回一个Promise对象，该对象在解析为请求的文本内容时解决
+					tempRes.text().then(data => {
+						console.log(data, '<=====data');
+						if (isFilterUrl(url)) return;
+						publishEvent(EVENT_TYPES.FETCH, fetchData);
+					});
+					return res;
+				})
+				.catch((err: Error) => {
+					console.log(err.message, '<===catch err message');
+					publishEvent(EVENT_TYPES.FETCH, fetchData);
+					throw err;
 				});
-				// text方法返回一个Promise对象，该对象在解析为请求的文本内容时解决
-				tempRes.text().then(data => {
-					console.log(data, '<=====data');
-					if (isFilterUrl(url)) return;
-					publishEvent(ERRORTYPES.FETCH, fetchData);
-				});
-				return res;
-			})
 		};
 	});
 }
@@ -75,7 +80,7 @@ export function replaceXhr() {
 			this.xhrParams = {
 				method: args[0].toUpperCase(),
 				url: args[1],
-				type: ERRORTYPES.XHR,
+				type: EVENT_TYPES.XHR,
 				createTime: getTimestamp(),
 			};
 			// 执行原生的open方法
@@ -84,29 +89,30 @@ export function replaceXhr() {
 	});
 	replaceAop(originXhr, 'send', (originalSend: IVoidFun) => {
 		return function (this: any, ...args: any[]) {
-			console.log(args, '<====args');
-
 			const { url, method } = this.xhrParams;
 			// loadend事件无论接口成功与否都会触发
 			on(this, 'loadend', function (this: any) {
 				console.log(this, '<====this');
 				console.log(url, '<====url');
-
 				// 判断请求地址是否需要过滤
 				if (isFilterUrl(url)) return;
 				const { status } = this;
 				if (method === 'POST') {
 					this.xhrParams.params = args[0];
+					this.xhrParams.url = this.responseURL;
 				} else {
 					this.xhrParams.params = parseParamsInGet(url);
-					this.xhrParams.url = url.split('?')[0];
+					this.xhrParams.url = url;
 				}
+
 				this.xhrParams.status = status;
 				this.xhrParams.endTime = getTimestamp();
 				// 接口请求时长
 				this.xhrParams.elapsedTime = this.xhrParams.endTime - this.xhrParams.createTime;
 				// 执行xhr的回掉函数
-				publishEvent(ERRORTYPES.XHR, this.xhrParams);
+				console.log(this.xhrParams, '<====this.xhrParams');
+
+				publishEvent(EVENT_TYPES.XHR, this.xhrParams);
 			});
 			// 执行原生的send方法
 			originalSend.apply(this, args);
@@ -117,16 +123,45 @@ export function replaceXhr() {
 // 监听error事件
 export function replaceError() {
 	// 资源加载报错未监听到
-	on(window, 'error', function (e: ErrorEvent) {		
-		publishEvent(ERRORTYPES.ERROR, e);
-	}, true);
+	on(
+		window,
+		'error',
+		function (e: ErrorEvent) {
+			console.log('error event');
+
+			publishEvent(EVENT_TYPES.ERROR, e);
+		},
+		true,
+	);
 }
 
 // 监听unhandledrejection事件
 export function replaceUnhadledRejection() {
 	on(window, 'unhandledrejection', function (e: PromiseRejectionEvent) {
-		publishEvent(ERRORTYPES.UNHANDLEDREJECTION, e);
+		console.log('unhandledrejection event');
+
+		publishEvent(EVENT_TYPES.UNHANDLEDREJECTION, e);
 	});
+}
+
+export function replaceHistoryFn(originHistory: any) {
+	console.log(originHistory, 'originHistory');
+	// this 是指路由对象
+	// args 是pushState方法原本的参数
+	return function (this: History, ...args: any[]) {
+		const { state } = this;
+		const { back, current } = state;
+		publishEvent(EVENT_TYPES.HISTRORYCHANGE, { back, current });
+		return originHistory.apply(this, args);
+	};
+}
+
+export function replaceHistory() {
+	on(window, 'popstate', function (e: PopStateEvent) {
+		console.log('popstate event');
+		publishEvent(EVENT_TYPES.HISTRORYCHANGE, e);
+	});
+	replaceAop(window.history, 'pushState', replaceHistoryFn);
 }
 
 export function addReplaceHandle(handler: IReplaceHandler) {

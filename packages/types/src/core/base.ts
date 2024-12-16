@@ -1,4 +1,4 @@
-import { ERRORTYPES } from './error';
+import { EVENT_TYPES} from './error';
 
 export interface IMySentryOptions {
 	hasError?: false; // 某段时间代码是否报错
@@ -27,6 +27,7 @@ export interface IAnyObject {
 export interface IErrorTarget {
 	target?: {
 		localName?: string;
+		tagName?: string;
 	};
 	error?: any;
 	message?: string;
@@ -45,7 +46,12 @@ export interface ICallback {
 }
 
 export interface IReplaceHandler {
-	type: ERRORTYPES;
+	type: EVENT_TYPES;
+	callback: ICallback;
+}
+
+export interface IEventHandle {
+	type: EVENT_TYPES;
 	callback: ICallback;
 }
 

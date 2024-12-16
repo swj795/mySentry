@@ -1,4 +1,4 @@
-import { IErrorInfo, ERRORTYPES } from '@mysentry/types';
+import { IErrorInfo, EVENT_TYPES } from '@mysentry/types';
 import { getTimestamp } from '@mysentry/utils';
 import { UserBehaviorError } from '@mysentry/common';
 
@@ -28,20 +28,20 @@ export class UserBehavior {
 	getStack() {
 		return this.stack;
 	}
-	getCategory(type: ERRORTYPES): UserBehaviorError {
+	getCategory(type: EVENT_TYPES): UserBehaviorError {
 		switch (type) {
-			case ERRORTYPES.FETCH:
-			case ERRORTYPES.XHR:
+			case EVENT_TYPES.FETCH:
+			case EVENT_TYPES.XHR:
 				return UserBehaviorError.HTTP;
-			case ERRORTYPES.CLICK:
+			case EVENT_TYPES.CLICK:
 				return UserBehaviorError.CLICK;
-			case ERRORTYPES.HISTORY:
-			case ERRORTYPES.HASHCHANGE:
+			case EVENT_TYPES.HISTORY:
+			case EVENT_TYPES.HASHCHANGE:
 				return UserBehaviorError.ROUTE;
-			case ERRORTYPES.RESOURCE:
+			case EVENT_TYPES.RESOURCE:
 				return UserBehaviorError.RESOURCE;
-			case ERRORTYPES.ERROR:
-			case ERRORTYPES.UNHANDLEDREJECTION:
+			case EVENT_TYPES.ERROR:
+			case EVENT_TYPES.UNHANDLEDREJECTION:
 				return UserBehaviorError.CODEERROR;
 			default:
 				return UserBehaviorError.CUSTOM;

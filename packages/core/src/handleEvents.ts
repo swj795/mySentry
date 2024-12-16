@@ -1,8 +1,8 @@
 import ErrorStackParser from 'error-stack-parser';
-import { IErrorTarget, ERRORTYPES, IXhrData } from '@mysentry/types';
+import { IErrorTarget, EVENT_TYPES, IXhrData, IVueHistoryRouterInfo } from '@mysentry/types';
 import { STATUS_CODE } from '@mysentry/common';
-import { getTimestamp } from '@mysentry/utils';
-import { userBehavior } from './userBehavior';
+import { getTimestamp, parseResourceError } from '@mysentry/utils';
+// import { userBehavior } from './userBehavior';
 import { reportData } from './reportData';
 
 // xhr请求数据处理
@@ -30,15 +30,20 @@ export function handleXhrData(data: IXhrData) {
 const HandleEvents = {
 	// 只能监听js代码运行错误
 	handleError(ev: IErrorTarget) {
+		console.log(ev, '<++++ev');
+
 		const target = ev.target;
-		if (!target || (ev.target && !ev.target.localName)) {
+		console.log(target, '<++++target');
+		// console.log(target?.localName, '<++++target.localName');
+
+		if (!target || (target && !target.localName)) {
 			// vue捕获的报错使用ev解析，异步错误使用ev.error解析
 			const stackFrame = ErrorStackParser.parse(!target ? ev : ev.error)[0];
 			console.log(stackFrame, '<++++stackFrame');
-			
+
 			const { fileName, columnNumber, lineNumber } = stackFrame;
 			const errorData = {
-				type: ERRORTYPES.ERROR,
+				type: EVENT_TYPES.ERROR,
 				status: STATUS_CODE.ERROR,
 				time: getTimestamp(),
 				message: ev.message,
@@ -48,14 +53,28 @@ const HandleEvents = {
 			};
 			console.log(errorData, '<==errorData');
 			// 此时错误为代码错误
-			userBehavior.push({
-				type: ERRORTYPES.ERROR,
-				category: userBehavior.getCategory(ERRORTYPES.ERROR),
-				data: errorData,
-				time: getTimestamp(),
-				status: STATUS_CODE.ERROR,
-			});
+			// userBehavior.push({
+			// 	type: EVENT_TYPES.ERROR,
+			// 	category: userBehavior.getCategory(EVENT_TYPES.ERROR),
+			// 	data: errorData,
+			// 	time: getTimestamp(),
+			// 	status: STATUS_CODE.ERROR,
+			// });
 			// 上报错误
+			reportData.send(errorData);
+		}
+
+		// 此时错误为资源错误
+		if (target && target.localName) {
+			// console.log(parseResourceError, '<===target');
+			console.log(target, '<===message');
+			const errorData = {
+				type: EVENT_TYPES.RESOURCE,
+				status: STATUS_CODE.ERROR,
+				time: getTimestamp(),
+				message: parseResourceError(target),
+			};
+			console.log(errorData, '<==errorData');
 			reportData.send(errorData);
 		}
 	},
@@ -66,6 +85,17 @@ const HandleEvents = {
 		console.log(data, '<==data');
 		const stackFrame = ErrorStackParser.parse(data.reason)[0];
 		console.log(stackFrame, '<==stackFrame');
+		const { fileName, columnNumber, lineNumber } = stackFrame;
+		const errorData = {
+			type: EVENT_TYPES.ERROR,
+			status: STATUS_CODE.ERROR,
+			time: getTimestamp(),
+			message: data.reason.message,
+			fileName,
+			line: lineNumber,
+			column: columnNumber,
+		};
+		reportData.send(errorData);
 		// const data1 = handlePromiseData(data);
 		// console.log(data1, '<==data1');
 	},
@@ -75,16 +105,22 @@ const HandleEvents = {
 		const errorInfo = handleXhrData(data);
 		console.log(errorInfo, '<===data1');
 		const errorData = {
-			type: ERRORTYPES.XHR,
-			status: STATUS_CODE.ERROR,
+			type: EVENT_TYPES.XHR,
+			status: errorInfo.status,
 			time: getTimestamp(),
 			interface: errorInfo.url,
 			method: errorInfo.method,
+			message: errorInfo.url + '请求接口报错',
 		};
 		// 上报错误
 		if (errorInfo.status !== 'ok') {
-		reportData.send(errorData);
+			reportData.send(errorData);
 		}
+	},
+	// history路由change
+	handleHistory(info: IVueHistoryRouterInfo) {
+		console.log(info, '<==histroy data');
+		// const { back, current } = info;
 
 	},
 };

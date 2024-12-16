@@ -3,12 +3,13 @@ import { nextTick, ref } from 'vue'
 import axios from 'axios'
 import { findCodeBySourceMap } from '@/utils/sourceMap'
 import hljs from 'highlight.js/lib/core'
+import type { IFileInfo } from '@/interface/index'
 
 const tableData = ref([])
 const dialogVisible = ref<boolean>(false)
 const hightCodeDiv = ref()
 
-// 获取错误列表
+// 获取错误列表 =》 通过ws/轮训接口实时获取
 const getErrorList = () => {
   axios.get('/getErrorList').then((res) => {
     console.log(res.data, '<==res')
@@ -19,11 +20,15 @@ const getErrorList = () => {
 
 // 此错误类型会被Vue.config.errorHandler捕获
 const handleClick = () => {
-  let a = undefined
-  if (a.length) {
-    console.log('111')
-  }
+  // let a = undefined
+  // if (a.length) {
+  //   console.log('111')
+  // }
   // getErrorList()
+  // console.log(a, '<===a')
+  const a = {};
+  console.log(a.b.c, );
+  
 }
 
 // 此类型错误会被全局的error事件捕获
@@ -56,23 +61,33 @@ const handleHttp = () => {
 }
 
 const handlePostHttp = () => {
-  axios.post('/1231', { a: 1, b: 2 }).then((res) => console.log(res))
+  axios
+    .post('/1231', { a: 1, b: 2 })
+    .then((res) => console.log(res, '<====res axios'))
+    .catch((err) => console.log(err, '<====err axiso'))
 }
 
 const handleFetchGet = () => {
-  fetch('/getList', {
-    method: 'get',
-    headers: {
-      'Content-Type': 'application/json'
+  fetch('http://example.com/movies.json')
+  // fetch('/api/123')
+    .then(response => {
+    console.log(response, '<===response');
+    
+    // 检查响应状态是否成功
+    if (!response.ok) {
+      // 如果响应状态不成功，则抛出错误
+      throw new Error('接口不存在或请求失败: ' + response.status);
     }
+    // 如果响应成功，继续处理数据
+    return response.json();
   })
-    .then((res) => {
-      console.log(res, '<+++fetch res')
-      return res
-    })
-    .then((res) => {
-      console.log('featch-res', res)
-    })
+  .then(data => {
+    console.log(data);
+  })
+  .catch(error => {
+    // 捕获并处理错误
+    console.error('Fetch error:', error);
+  });
 }
 const handleFetchPost = () => {
   fetch('/getList', {
@@ -94,10 +109,10 @@ const resourceError = () => {
   document.body.appendChild(script)
 }
 
-const handlecheckSource = async (row) => {
+const handlecheckSource = async (row: IFileInfo) => {
   const sourceRes = await findCodeBySourceMap(row)
-  console.log(sourceRes, '<===sourceRes');
-  
+  console.log(sourceRes, '<===sourceRes')
+
   const lightCode = render(sourceRes.code.join('\n'), 'js', [[4, 'error']])
   dialogVisible.value = true
   nextTick(() => {
