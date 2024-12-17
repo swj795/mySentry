@@ -11,3 +11,5 @@ app.use(mysentry, {
   reportUrl: '/addError',
 })；
 ```
+
+![image](https://github.com/swj795/mySentry/blob/master/flowchat.svg)
