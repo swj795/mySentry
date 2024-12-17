@@ -1,7 +1,9 @@
 import { IVueInitOptions } from '@mysentry/types';
 import { validateOptions, setOptionFlag } from '@mysentry/utils';
-// import { userBehavior } from './userBehavior';
+import { userBehavior } from './userBehavior';
 import { reportData } from './reportData';
+
+const { initBehavior } = userBehavior();
 
 // 插件配置项类
 export class Options {
@@ -11,7 +13,7 @@ export class Options {
 	bingOptions(options: IVueInitOptions) {
 		const { reportUrl } = options;
 		// 验证所传类型是否符合要求且绑定
-		validateOptions(reportUrl,'reportUrl', 'string') && (this.reportUrl = reportUrl);
+		validateOptions(reportUrl, 'reportUrl', 'string') && (this.reportUrl = reportUrl);
 	}
 }
 
@@ -22,7 +24,7 @@ export function handleBindOptions(vueOptions: IVueInitOptions) {
 	// 添加设置标记，以防重复绑定
 	setOptionFlag(vueOptions);
 	// 用户行为绑定配置项
-	// userBehavior.
+	initBehavior(vueOptions);
 	// 配置上报信息
 	reportData.bingOptions(vueOptions);
 	options.bingOptions(vueOptions);

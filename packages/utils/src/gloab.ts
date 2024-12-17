@@ -1,4 +1,6 @@
 import { IMySentryOptions, EVENT_TYPES, IAnyObject, IAnyFun } from '@mysentry/types';
+import Ajv, { JSONSchemaType } from 'ajv';
+// import Ajv, { JTDSchemaType } from 'ajv/dist/jtd';
 
 const globalMySentryOptions: IMySentryOptions = {} as IMySentryOptions;
 
@@ -79,7 +81,7 @@ export function replaceAop(
 ) {
 	if (source === undefined) return;
 	if (name in source || isForced) {
-		const original = source[name];		
+		const original = source[name];
 		const wrapped = replacement(original);
 		if (typeof wrapped === 'function') {
 			source[name] = wrapped;
@@ -95,14 +97,13 @@ export function replaceAop(
  * @param opitons
  */
 export function on(
-  target: Window | Document,
-  eventName: string,
-  handler: IAnyFun,
-  opitons = false
+	target: Window | Document,
+	eventName: string,
+	handler: IAnyFun,
+	opitons = false,
 ): void {
 	target.addEventListener(eventName, handler, opitons);
 	console.log(`add event listener ${eventName}`);
-	
 }
 
 // 解析get请求中的参数
@@ -111,7 +112,7 @@ export function parseParamsInGet(url: string) {
 	if (url.indexOf('?') === -1) return params;
 	const search = url.split('?')[1];
 	const searchArr = search.split('&');
-	searchArr.forEach((item) => {
+	searchArr.forEach(item => {
 		const [key, value] = item.split('=');
 		params[key] = value;
 	});
@@ -126,6 +127,27 @@ export function cutString(str: string, len: number) {
 
 // 转化资源错误的信息
 export function parseResourceError(resourceErr: any) {
-    console.log(resourceErr);
+	console.log(resourceErr);
 	return cutString(resourceErr.src || resourceErr.herf, 100) + '资源加载失败';
 }
+
+// 验证方法
+export function validateOption(target: any, targetName: string, expectType: string): any {
+	if (!target) return false;
+	if (typeofAny(target) === expectType) return true;
+	console.error(`web-see: ${targetName}期望传入${expectType}类型，目前是${typeofAny(target)}类型`);
+}
+
+// 使用ajv进行数据验证
+const ajv = new Ajv();
+ajv.addKeyword({
+	keyword: 'isFunction',
+	schemaType: 'boolean',
+	validate: function (_schema: any, data: any) {
+		return typeof data === 'function';
+	},
+});
+export const validSomething = <T>(schema: JSONSchemaType<T>, data: T) => {
+	const validate = ajv.compile(schema);
+	return validate(data);
+};
