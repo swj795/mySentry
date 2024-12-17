@@ -19,6 +19,8 @@ export function replace(type: EVENT_TYPES) {
 			return replaceXhr();
 		case EVENT_TYPES.HISTRORYCHANGE:
 			return replaceHistory();
+		case EVENT_TYPES.CLICK:
+			return replaceClick();
 		default:
 			return () => {};
 	}
@@ -162,6 +164,12 @@ export function replaceHistory() {
 		publishEvent(EVENT_TYPES.HISTRORYCHANGE, e);
 	});
 	replaceAop(window.history, 'pushState', replaceHistoryFn);
+}
+
+export function replaceClick() {
+	on(document, 'click', function (e: MouseEvent) {
+		publishEvent(EVENT_TYPES.CLICK, e.target);
+	});
 }
 
 export function addReplaceHandle(handler: IReplaceHandler) {

@@ -1,41 +1,58 @@
-import { IErrorInfo, EVENT_TYPES } from '@mysentry/types';
-import { getTimestamp } from '@mysentry/utils';
+import { IBehaviorInfo, EVENT_TYPES, IVueInitOptions } from '@mysentry/types';
+import { getTimestamp, validSomething } from '@mysentry/utils';
 import { UserBehaviorError } from '@mysentry/common';
+import { LENGTH_SCHEMA, BEFORE_PUSH_SCHEMA } from './scheam';
 
-export class UserBehavior {
-	maxBehaviorCount = 20; // 用户行为存储最大长度
-	stack: IErrorInfo[]; // 用户行为栈
-	constructor() {
-		this.stack = [];
-	}
-	push(data: IErrorInfo): void {
-		this.immediatePush(data);
-	}
-	immediatePush(data: IErrorInfo): void {
+export const userBehavior = () => {
+	// 行为栈
+	const stack: IBehaviorInfo[] = [];
+	// 行为栈的默认长度
+	let stackLength: number = 100;
+	// 添加至栈前自定义操作
+	let beforePush: any = null;
+
+	// 	初始化行为配置项
+	const initBehavior = (options: IVueInitOptions) => {
+		const { maxStackLength, beforePushHook } = options;
+		validSomething(LENGTH_SCHEMA as any, { maxStackLength }) &&
+			(stackLength = maxStackLength || stackLength);
+		validSomething(BEFORE_PUSH_SCHEMA as any, { beforePushHook }) &&
+			(beforePush = beforePushHook || beforePush);
+	};
+
+	const immediatePush = (data: IBehaviorInfo) => {
 		data.time || (data.time = getTimestamp());
-		if (this.stack.length >= this.maxBehaviorCount) {
-			this.shift();
+		if (stack.length >= stackLength) {
+			stack.shift();
 		}
-		this.stack.push(data);
-		this.stack.sort((a, b) => a.time - b.time); // 对用户行为通过时间进行排序
-	}
-	shift() {
-		return this.stack.shift() !== undefined;
-	}
-	clear() {
-		this.stack = [];
-	}
-	getStack() {
-		return this.stack;
-	}
-	getCategory(type: EVENT_TYPES): UserBehaviorError {
+		stack.push(data);
+		stack.sort((a, b) => a.time - b.time); // 对用户行为通过时间进行排序
+	};
+
+	// 将行为内容添加到行为栈中
+	const pushBehavior = (behavior: IBehaviorInfo) => {
+		if (validSomething(BEFORE_PUSH_SCHEMA as any, { beforePush })) {
+			const result = beforePush(behavior);
+			immediatePush(result);
+			return;
+		}
+		immediatePush(behavior);
+	};
+
+	// 获取用户行为栈
+	const getStack = () => {
+		return stack;
+	};
+
+	// 获取用户行为的类型
+	const getBehaviorCategory = (type: EVENT_TYPES) => {
 		switch (type) {
 			case EVENT_TYPES.FETCH:
 			case EVENT_TYPES.XHR:
 				return UserBehaviorError.HTTP;
 			case EVENT_TYPES.CLICK:
 				return UserBehaviorError.CLICK;
-			case EVENT_TYPES.HISTORY:
+			case EVENT_TYPES.HISTRORYCHANGE:
 			case EVENT_TYPES.HASHCHANGE:
 				return UserBehaviorError.ROUTE;
 			case EVENT_TYPES.RESOURCE:
@@ -46,8 +63,14 @@ export class UserBehavior {
 			default:
 				return UserBehaviorError.CUSTOM;
 		}
-	}
-}
+	};
 
-const userBehavior = new UserBehavior();
-export { userBehavior };
+	return {
+		stack,
+		initBehavior,
+		pushBehavior,
+		immediatePush,
+		getStack,
+		getBehaviorCategory,
+	};
+};

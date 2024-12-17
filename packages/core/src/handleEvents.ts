@@ -2,8 +2,11 @@ import ErrorStackParser from 'error-stack-parser';
 import { IErrorTarget, EVENT_TYPES, IXhrData, IVueHistoryRouterInfo } from '@mysentry/types';
 import { STATUS_CODE } from '@mysentry/common';
 import { getTimestamp, parseResourceError } from '@mysentry/utils';
-// import { userBehavior } from './userBehavior';
+import { userBehavior } from './userBehavior';
 import { reportData } from './reportData';
+import { BEHAVIOR_STATUS } from '@mysentry/types';
+
+const { stack, pushBehavior, getBehaviorCategory } = userBehavior();
 
 // xhr请求数据处理
 export function handleXhrData(data: IXhrData) {
@@ -30,17 +33,10 @@ export function handleXhrData(data: IXhrData) {
 const HandleEvents = {
 	// 只能监听js代码运行错误
 	handleError(ev: IErrorTarget) {
-		console.log(ev, '<++++ev');
-
 		const target = ev.target;
-		console.log(target, '<++++target');
-		// console.log(target?.localName, '<++++target.localName');
-
 		if (!target || (target && !target.localName)) {
 			// vue捕获的报错使用ev解析，异步错误使用ev.error解析
 			const stackFrame = ErrorStackParser.parse(!target ? ev : ev.error)[0];
-			console.log(stackFrame, '<++++stackFrame');
-
 			const { fileName, columnNumber, lineNumber } = stackFrame;
 			const errorData = {
 				type: EVENT_TYPES.ERROR,
@@ -52,14 +48,17 @@ const HandleEvents = {
 				column: columnNumber,
 			};
 			console.log(errorData, '<==errorData');
-			// 此时错误为代码错误
-			// userBehavior.push({
-			// 	type: EVENT_TYPES.ERROR,
-			// 	category: userBehavior.getCategory(EVENT_TYPES.ERROR),
-			// 	data: errorData,
-			// 	time: getTimestamp(),
-			// 	status: STATUS_CODE.ERROR,
-			// });
+			pushBehavior({
+				category: getBehaviorCategory(EVENT_TYPES.ERROR),
+				status: BEHAVIOR_STATUS.FAIL,
+				time: getTimestamp(),
+				behaviorClickErrorInfo: {
+					message: ev.message,
+					fileName,
+					line: lineNumber,
+					column: columnNumber,
+				},
+			});
 			// 上报错误
 			reportData.send(errorData);
 		}
@@ -120,8 +119,33 @@ const HandleEvents = {
 	// history路由change
 	handleHistory(info: IVueHistoryRouterInfo) {
 		console.log(info, '<==histroy data');
-		// const { back, current } = info;
+		pushBehavior({
+			category: getBehaviorCategory(EVENT_TYPES.CLICK),
+			time: getTimestamp(),
+			status: BEHAVIOR_STATUS.SUCCESS,
+			behaviorHistoryInfo: {
+				form: info.back,
+				to: info.current,
+			},
+		});
+	},
 
+	// 发布全局click事件
+	handleClick(data: HTMLElement) {
+		console.log(data, '<==click data');
+		// 拼接用户点击行为
+		// 点击body时不用记录
+		console.log(data === document.body, 'body');
+
+		if (data !== document.body) {
+			pushBehavior({
+				category: getBehaviorCategory(EVENT_TYPES.CLICK),
+				time: getTimestamp(),
+				content: data,
+				status: BEHAVIOR_STATUS.SUCCESS,
+			});
+		}
+		console.log(stack, '<==stack');
 	},
 };
 

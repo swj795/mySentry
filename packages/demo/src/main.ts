@@ -21,7 +21,8 @@ app.use(ElementPlus)
 app.use(hljsVuePlugin)
 app.use(mysentry, {
   reportUrl: '/addError',
-  apikey: 'abcd'
+  apikey: 'abcd',
+  // beforePushHook: 'something'
 })
 
 app.mount('#app')

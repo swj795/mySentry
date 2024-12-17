@@ -16,7 +16,8 @@ export interface IVueInitOptions {
 	silentError?: boolean;
 	silentHashchange?: boolean;
 	silentUnhandledrejection?: boolean;
-	
+	maxStackLength?: number; // 行为栈长度
+	beforePushHook?: (payload: any) => any; // 入栈前自定义操作
 }
 
 export interface IViewModel {

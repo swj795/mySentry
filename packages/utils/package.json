@@ -8,7 +8,8 @@
 		"dist"
 	],
 	"dependencies": {
-		"@mysentry/types": "workspace:*"
+		"@mysentry/types": "workspace:*",
+		"ajv": "^8.17.1"
 	},
 	"license": "ISC"
 }
