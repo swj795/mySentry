@@ -120,19 +120,34 @@ const HandleEvents = {
 	handleHistory(info: IVueHistoryRouterInfo) {
 		console.log(info, '<==histroy data');
 		pushBehavior({
-			category: getBehaviorCategory(EVENT_TYPES.CLICK),
+			category: getBehaviorCategory(EVENT_TYPES.HISTRORYCHANGE),
 			time: getTimestamp(),
 			status: BEHAVIOR_STATUS.SUCCESS,
 			behaviorHistoryInfo: {
-				form: info.back,
-				to: info.current,
+				form: info.current,
+				to: info.forward,
+			},
+		});
+		console.log(stack, 'history stack');
+	},
+
+	// hash路由change
+	handleHash(info: IVueHistoryRouterInfo) {
+		console.log(info, '<==hash data');
+		pushBehavior({
+			category: getBehaviorCategory(EVENT_TYPES.HISTRORYCHANGE),
+			time: getTimestamp(),
+			status: BEHAVIOR_STATUS.SUCCESS,
+			behaviorHistoryInfo: {
+				form: info.current,
+				to: info.forward,
 			},
 		});
 	},
 
 	// 发布全局click事件
 	handleClick(data: HTMLElement) {
-		console.log(data, '<==click data');
+		// console.log(data, '<==click data');
 		// 拼接用户点击行为
 		// 点击body时不用记录
 		console.log(data === document.body, 'body');

@@ -1,6 +1,12 @@
 import { EVENT_TYPES, IVoidFun, IReplaceHandler } from '@mysentry/types';
 // import { replaceAop } from '@mysentry/utils';
-import { replaceAop, on, getTimestamp, parseParamsInGet } from '../../utils/src/index';
+import {
+	replaceAop,
+	on,
+	getTimestamp,
+	parseParamsInGet,
+	isHistoryMode,
+} from '../../utils/src/index';
 // import { WHITE_URL_LIST } from '@mysentry/common';
 import { WHITE_URL_LIST } from '../../common/src/index';
 import { publishEvent, subscribeEvent } from './subscribe';
@@ -19,6 +25,8 @@ export function replace(type: EVENT_TYPES) {
 			return replaceXhr();
 		case EVENT_TYPES.HISTRORYCHANGE:
 			return replaceHistory();
+		case EVENT_TYPES.HASHCHANGE:
+			return replaceHashChange();
 		case EVENT_TYPES.CLICK:
 			return replaceClick();
 		default:
@@ -150,20 +158,44 @@ export function replaceHistoryFn(originHistory: any) {
 	console.log(originHistory, 'originHistory');
 	// this 是指路由对象
 	// args 是pushState方法原本的参数
+	// 这里只能this  执行原生的方法需要用history对象
 	return function (this: History, ...args: any[]) {
 		const { state } = this;
-		const { back, current } = state;
-		publishEvent(EVENT_TYPES.HISTRORYCHANGE, { back, current });
+		const { forward, current } = state;
+
+		publishEvent(EVENT_TYPES.HISTRORYCHANGE, { forward, current });
+		console.log(history, 'history this');
+
 		return originHistory.apply(this, args);
 	};
 }
 
+export function replaceHashFn(originHash: any) {
+	return function (this: History, ...args: any[]) {
+		const { state } = this;
+		const { forward, current } = state;
+
+		publishEvent(EVENT_TYPES.HASHCHANGE, { forward, current });
+		return originHash.apply(this, args);
+	};
+}
+
 export function replaceHistory() {
+	// 项目是否为history路由模式
+	if (!isHistoryMode()) return;
 	on(window, 'popstate', function (e: PopStateEvent) {
 		console.log('popstate event');
 		publishEvent(EVENT_TYPES.HISTRORYCHANGE, e);
 	});
 	replaceAop(window.history, 'pushState', replaceHistoryFn);
+	replaceAop(window.history, 'replaceState', replaceHistoryFn);
+}
+
+export function replaceHashChange() {
+	// hash路由一样样需要通过重写pushstate和replacestate方法监听
+	if (isHistoryMode()) return;
+	replaceAop(window.history, 'pushState', replaceHashFn);
+	replaceAop(window.history, 'replaceState', replaceHashFn);
 }
 
 export function replaceClick() {
