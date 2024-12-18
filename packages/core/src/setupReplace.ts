@@ -40,6 +40,17 @@ export function setupReplace() {
 			HandleEvents.handleHistory(data);
 		},
 	});
+
+	// 捕获hash路由变化信息
+	addReplaceHandle({
+		type: EVENT_TYPES.HASHCHANGE,
+		callback: data => {
+			console.log(data, '<==hashchange');
+
+			HandleEvents.handleHash(data);
+		},
+	});
+
 	// 捕获全局click事件
 	addReplaceHandle({
 		type: EVENT_TYPES.CLICK,

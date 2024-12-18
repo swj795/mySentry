@@ -151,3 +151,9 @@ export const validSomething = <T>(schema: JSONSchemaType<T>, data: T) => {
 	const validate = ajv.compile(schema);
 	return validate(data);
 };
+
+// 判断项目是否为history模式
+export const isHistoryMode = () => {
+	const currentUrl = window.location.href;
+	return !currentUrl.includes('/#/');
+};
