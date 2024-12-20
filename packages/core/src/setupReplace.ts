@@ -55,6 +55,8 @@ export function setupReplace() {
 	addReplaceHandle({
 		type: EVENT_TYPES.CLICK,
 		callback: data => {
+			console.log(data, '<==click');
+
 			HandleEvents.handleClick(data);
 		},
 	});

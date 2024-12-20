@@ -156,26 +156,25 @@ export function replaceUnhadledRejection() {
 
 export function replaceHistoryFn(originHistory: any) {
 	console.log(originHistory, 'originHistory');
-	// this 是指路由对象
+	// this 是指路由对象History
 	// args 是pushState方法原本的参数
 	// 这里只能this  执行原生的方法需要用history对象
 	return function (this: History, ...args: any[]) {
-		const { state } = this;
+		const { state } = history;
 		const { forward, current } = state;
-
 		publishEvent(EVENT_TYPES.HISTRORYCHANGE, { forward, current });
-		console.log(history, 'history this');
-
-		return originHistory.apply(this, args);
+		console.log(this, 'history this');
+		return originHistory.apply(history, args);
 	};
 }
 
 export function replaceHashFn(originHash: any) {
 	return function (this: History, ...args: any[]) {
-		const { state } = this;
-		const { forward, current } = state;
+		// const { state } = this;
+		// const { forward, current } = state;
+		// console.log(type, 'type');
 
-		publishEvent(EVENT_TYPES.HASHCHANGE, { forward, current });
+		// publishEvent(type, { forward, current });
 		return originHash.apply(this, args);
 	};
 }
@@ -183,25 +182,33 @@ export function replaceHashFn(originHash: any) {
 export function replaceHistory() {
 	// 项目是否为history路由模式
 	if (!isHistoryMode()) return;
-	on(window, 'popstate', function (e: PopStateEvent) {
-		console.log('popstate event');
-		publishEvent(EVENT_TYPES.HISTRORYCHANGE, e);
-	});
+	// on(window, 'popstate', function (e: PopStateEvent) {
+	// 	console.log('popstate event');
+	// 	publishEvent(EVENT_TYPES.HISTRORYCHANGE, e);
+	// });
 	replaceAop(window.history, 'pushState', replaceHistoryFn);
-	replaceAop(window.history, 'replaceState', replaceHistoryFn);
+	// replaceAop(window.history, 'replaceState', replaceHistoryFn);
 }
 
 export function replaceHashChange() {
 	// hash路由一样样需要通过重写pushstate和replacestate方法监听
-	if (isHistoryMode()) return;
-	replaceAop(window.history, 'pushState', replaceHashFn);
-	replaceAop(window.history, 'replaceState', replaceHashFn);
+	// if (isHistoryMode()) return;
+	// replaceAop(window.history, 'pushState', replaceHashFn);
+	// replaceAop(window.history, 'replaceState', replaceHashFn);
 }
 
 export function replaceClick() {
-	on(document, 'click', function (e: MouseEvent) {
-		publishEvent(EVENT_TYPES.CLICK, e.target);
-	});
+	// 在事件的冒泡阶段监听点击事件 不然与监听错误的顺序错误
+	on(
+		window.document,
+		'click',
+		function (e: MouseEvent) {
+			console.log('click event');
+
+			publishEvent(EVENT_TYPES.CLICK, e.target);
+		},
+		true,
+	);
 }
 
 export function addReplaceHandle(handler: IReplaceHandler) {
