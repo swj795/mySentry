@@ -2,10 +2,9 @@ import { IBehaviorInfo, EVENT_TYPES, IVueInitOptions } from '@mysentry/types';
 import { getTimestamp, validSomething } from '@mysentry/utils';
 import { UserBehaviorError } from '@mysentry/common';
 import { LENGTH_SCHEMA, BEFORE_PUSH_SCHEMA } from './scheam';
-
+// 行为栈
+const stack: IBehaviorInfo[] = [];
 export const userBehavior = () => {
-	// 行为栈
-	const stack: IBehaviorInfo[] = [];
 	// 行为栈的默认长度
 	let stackLength: number = 100;
 	// 添加至栈前自定义操作

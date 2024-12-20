@@ -1,6 +1,9 @@
 import { Queue } from './queue';
 import { IVueInitOptions } from '@mysentry/types';
 import { validateOptions } from '@mysentry/utils';
+import { userBehavior } from './userBehavior';
+
+const { stack } = userBehavior();
 
 // 上报错误信息类
 export class ReportData {
@@ -23,7 +26,7 @@ export class ReportData {
 				'Content-Type': 'application/json',
 			},
 			body: JSON.stringify(data),
-		})
+		});
 	}
 
 	// 绑定错误信息的配置
@@ -38,14 +41,21 @@ export class ReportData {
 			pageUrl: document.location.href,
 		};
 		console.log(commonInfo.pageUrl, 'commonInfo');
-		
+
 		return commonInfo;
+	}
+
+	// 将用户行为栈添加至错误信息
+	addStack() {
+		console.log(stack, 'report stack');
+		return stack;
 	}
 
 	// 上报错误信息
 	send(data: any): void {
 		const commonInfo = this.beforeSend();
-		const sendData = { ...commonInfo, ...data };
+		const behaviorStack = this.addStack();
+		const sendData = { behaviorStack, ...commonInfo, ...data };
 		const sendResult = this.beacon(this.reportUrl, sendData);
 		console.log(sendResult, 'sendResult');
 		if (!sendResult) {
